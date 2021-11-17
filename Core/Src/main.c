@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "mfrc630.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,7 +52,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
-
+void MX_GPIO_USB_Init(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -88,10 +88,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPIO_USB_Init();
   MX_SPI1_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
+  mfrc630_AN1102_recommended_registers(MFRC630_PROTO_ISO14443A_106_MILLER_MANCHESTER);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -241,7 +243,48 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void MX_GPIO_USB_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+	//USB reset
+    GPIO_InitStruct.Pin = GPIO_PIN_12;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
+    HAL_Delay(10);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+}
+
+void mfrc630_SPI_select()
+{
+	HAL_GPIO_WritePin(SDA_GPIO_Port, SDA_Pin, GPIO_PIN_RESET);
+}
+
+void mfrc630_SPI_unselect()
+{
+	HAL_GPIO_WritePin(SDA_GPIO_Port, SDA_Pin, GPIO_PIN_SET);
+}
+void mfrc630_SPI_transfer(const uint8_t* tx, uint8_t* rx, uint16_t len)
+{
+	switch(HAL_SPI_TransmitReceive(&hspi1, tx, rx, len, 5000))
+	{
+	case HAL_OK:
+		// Communication is completed, dont do anything.
+		break;
+	case HAL_TIMEOUT:
+		// VCP_printf("Timeout\n");
+	case HAL_ERROR:
+		// VCP_printf("Some error\n");
+		Error_Handler();
+		break;
+	default:
+		break;
+	}
+}
 /* USER CODE END 4 */
 
 /**
