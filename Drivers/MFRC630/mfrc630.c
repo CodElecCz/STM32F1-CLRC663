@@ -355,13 +355,18 @@ uint16_t mfrc630_iso14443a_WUPA_REQA(uint8_t instruction) {
   // if no Rx IRQ, or if there's an error somehow, return 0
   uint8_t irq0 = mfrc630_irq0();
   if ((!(irq0 & MFRC630_IRQ0_RX_IRQ)) || (irq0 & MFRC630_IRQ0_ERR_IRQ)) {
-    MFRC630_PRINTF("No RX, irq1: %hhx irq0: %hhx\n", irq1_value, irq0);
+    MFRC630_PRINTF("No RX, irq1: %02x irq0: %02x\n", irq1_value, irq0);
+    if((irq0 & MFRC630_IRQ0_ERR_IRQ)) {
+    	uint8_t error = mfrc630_read_reg(MFRC630_REG_ERROR);
+    	MFRC630_PRINTF("error: %02x\n", error);
+    }
+
     return 0;
   }
 
   uint8_t rx_len = mfrc630_fifo_length();
   uint16_t res;
-  MFRC630_PRINTF("rx_len: %hhd\n", rx_len);
+  MFRC630_PRINTF("rx_len: %02d\n", rx_len);
   if (rx_len == 2) {  // ATQA should answer with 2 bytes.
     mfrc630_read_fifo((uint8_t*) &res, rx_len);
 
@@ -433,7 +438,7 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
     // max 32 loops of the collision loop.
     uint8_t collision_n;
     for (collision_n=0; collision_n < 32; collision_n++) {
-      MFRC630_PRINTF("\nCL: %hhd, coll loop: %hhd, kb %hhd long: ", cascade_level, collision_n, known_bits);
+      MFRC630_PRINTF("\nCL: %hhd, coll loop: %02d, kb %02d long: ", cascade_level, collision_n, known_bits);
       mfrc630_print_block(uid_this_level, (known_bits + 8 - 1) / 8);
       MFRC630_PRINTF("\n");
 
@@ -454,7 +459,7 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
       // replaced by a zero. This function is needed for ISO/IEC14443 anticollision (0<<7).
       // We want to shift the bits with RxAlign
       uint8_t rxalign = known_bits % 8;
-      MFRC630_PRINTF("Setting rx align to: %hhd\n", rxalign);
+      MFRC630_PRINTF("Setting rx align to: %02d\n", rxalign);
       mfrc630_write_reg(MFRC630_REG_RXBITCTRL, (0<<7) | (rxalign<<4));
 
 
@@ -467,7 +472,7 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
         message_length = ((known_bits / 8) + 1) + 2;
       }
 
-      MFRC630_PRINTF("Send:%hhd long: ", message_length);
+      MFRC630_PRINTF("Send:%02d long: ", message_length);
       mfrc630_print_block(send_req, message_length);
       MFRC630_PRINTF("\n");
 
@@ -489,8 +494,8 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
       uint8_t irq0 = mfrc630_irq0();
       uint8_t error = mfrc630_read_reg(MFRC630_REG_ERROR);
       uint8_t coll = mfrc630_read_reg(MFRC630_REG_RXCOLL);
-      MFRC630_PRINTF("irq0: %hhX\n", irq0);
-      MFRC630_PRINTF("error: %hhX\n", error);
+      MFRC630_PRINTF("irq0: %02X\n", irq0);
+      MFRC630_PRINTF("error: %02X\n", error);
       uint8_t collision_pos = 0;
       if (irq0 & MFRC630_IRQ0_ERR_IRQ) {  // some error occured.
         // Check what kind of error.
@@ -499,7 +504,7 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
           // A collision was detected...
           if (coll & (1<<7)) {
             collision_pos = coll & (~(1<<7));
-            MFRC630_PRINTF("Collision at %hhX\n", collision_pos);
+            MFRC630_PRINTF("Collision at %02X\n", collision_pos);
             // This be a true collision... we have to select either the address
             // with 1 at this position or with zero
             // ISO spec says typically a 1 is added, that would mean:
@@ -520,7 +525,7 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
             uid_this_level[((choice_pos)/8)] |= selection << ((choice_pos) % 8);
             known_bits++;  // add the bit we just decided.
 
-            MFRC630_PRINTF("uid_this_level now kb %hhd long: ", known_bits);
+            MFRC630_PRINTF("uid_this_level now kb %02d long: ", known_bits);
             mfrc630_print_block(uid_this_level, 10);
             MFRC630_PRINTF("\n");
 
@@ -535,17 +540,17 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
         } else {
           // Can this ever occur?
           collision_pos = 0x20 - known_bits;
-          MFRC630_PRINTF("No collision, error was: %hhx, setting collision_pos to: %hhx\n", error, collision_pos);
+          MFRC630_PRINTF("No collision, error was: %02x, setting collision_pos to: %02x\n", error, collision_pos);
         }
       } else if (irq0 & MFRC630_IRQ0_RX_IRQ) {
         // we got data, and no collisions, that means all is well.
         collision_pos = 0x20 - known_bits;
-        MFRC630_PRINTF("Got data, no collision, setting to: %hhx\n", collision_pos);
+        MFRC630_PRINTF("Got data, no collision, setting to: %02x\n", collision_pos);
       } else {
         // We have no error, nor received an RX. No response, no card?
         return 0;
       }
-      MFRC630_PRINTF("collision_pos: %hhX\n", collision_pos);
+      MFRC630_PRINTF("collision_pos: %02X\n", collision_pos);
 
       // read the UID Cln so far from the buffer.
       uint8_t rx_len = mfrc630_fifo_length();
@@ -553,11 +558,11 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
 
       mfrc630_read_fifo(buf, rx_len < 5 ? rx_len : 5);
 
-      MFRC630_PRINTF("Fifo %hhd long: ", rx_len);
+      MFRC630_PRINTF("Fifo %02d long: ", rx_len);
       mfrc630_print_block(buf, rx_len);
       MFRC630_PRINTF("\n");
 
-      MFRC630_PRINTF("uid_this_level kb %hhd long: ", known_bits);
+      MFRC630_PRINTF("uid_this_level kb %02d long: ", known_bits);
       mfrc630_print_block(uid_this_level, (known_bits + 8 - 1) / 8);
       MFRC630_PRINTF("\n");
       // move the buffer into the uid at this level, but OR the result such that
@@ -567,10 +572,10 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
         uid_this_level[(known_bits / 8) + rbx] |= buf[rbx];
       }
       known_bits += collision_pos;
-      MFRC630_PRINTF("known_bits: %hhX\n", known_bits);
+      MFRC630_PRINTF("known_bits: %02X\n", known_bits);
 
       if ((known_bits >= 32)) {
-        MFRC630_PRINTF("exit collision loop: uid_this_level kb %hhd long: ", known_bits);
+        MFRC630_PRINTF("exit collision loop: uid_this_level kb %02d long: ", known_bits);
         mfrc630_print_block(uid_this_level, 10);
         MFRC630_PRINTF("\n");
 
@@ -607,7 +612,7 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
 
     // actually send it!
     mfrc630_cmd_transceive(send_req, message_length);
-    MFRC630_PRINTF("send_req %hhd long: ", message_length);
+    MFRC630_PRINTF("send_req %02d long: ", message_length);
     mfrc630_print_block(send_req, message_length);
     MFRC630_PRINTF("\n");
 
@@ -666,7 +671,7 @@ uint8_t mfrc630_iso14443a_select(uint8_t* uid, uint8_t* sak) {
       return cascade_level*3 + 1;
     }
 
-    MFRC630_PRINTF("Exit cascade %hhd long: ", cascade_level);
+    MFRC630_PRINTF("Exit cascade %02d long: ", cascade_level);
     mfrc630_print_block(uid, 10);
     MFRC630_PRINTF("\n");
   }  // cascade loop
@@ -897,7 +902,7 @@ void mfrc630_MF_example_dump() {
     uint8_t uid_len = mfrc630_iso14443a_select(uid, &sak);
 
     if (uid_len != 0) {  // did we get an UID?
-      MFRC630_PRINTF("UID of %hhd bytes (SAK:0x%hhX): ", uid_len, sak);
+      MFRC630_PRINTF("UID of %02d bytes (SAK:0x%02X): ", uid_len, sak);
       mfrc630_print_block(uid, uid_len);
       MFRC630_PRINTF("\n");
 
@@ -916,7 +921,7 @@ void mfrc630_MF_example_dump() {
         uint8_t b;
         for (b=0; b < 4 ; b++) {
           len = mfrc630_MF_read_block(b, readbuf);
-          MFRC630_PRINTF("Read block 0x%hhX: ", b);
+          MFRC630_PRINTF("Read block 0x%02X: ", b);
           mfrc630_print_block(readbuf, len);
           MFRC630_PRINTF("\n");
         }

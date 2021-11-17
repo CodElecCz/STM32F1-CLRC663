@@ -9,22 +9,19 @@
 #include "main.h"
 #include "mfrc630.h"
 #include "usbd_cdc_if.h"
+#include "delay.h"
 
-void USB_Transmit(const char *ptr, int len)
-{
-	uint32_t cnt = 0;
-	uint8_t ret = CDC_Transmit_FS((uint8_t *)ptr, len);
-	while(ret == USBD_BUSY)
-	{
-		HAL_Delay_us(50);
-		ret = CDC_Transmit_FS((uint8_t *)ptr, len);
-		if(++cnt>10)
-			break;
-	}
+#include <stdio.h>
+
+// Hex print for blocks without printf.
+static void print_block(uint8_t * block,uint8_t length){
+    for (uint8_t i=0; i<length; i++){
+        printf("%02X ", block[i]);
+    }
 }
 
 // The example dump function adapted such that it prints with Serial.print.
-void mfrc630_MF_example_dump_arduino() {
+void mfrc_dump() {
   uint16_t atqa = mfrc630_iso14443a_REQA();
   if (atqa != 0) {  // Are there any cards that answered?
     uint8_t sak;
@@ -34,13 +31,9 @@ void mfrc630_MF_example_dump_arduino() {
     uint8_t uid_len = mfrc630_iso14443a_select(uid, &sak);
 
     if (uid_len != 0) {  // did we get an UID?
-      Serial.print("UID of ");
-      Serial.print(uid_len);
-      Serial.print(" bytes (SAK: ");
-      Serial.print(sak);
-      Serial.print("): ");
+      printf("UID of %d bytes (SAK: %d): ", uid_len, sak);
       print_block(uid, uid_len);
-      Serial.print("\n");
+      printf("\n");
 
       // Use the manufacturer default key...
       uint8_t FFkey[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -49,28 +42,28 @@ void mfrc630_MF_example_dump_arduino() {
 
       // Try to athenticate block 0.
       if (mfrc630_MF_auth(uid, MFRC630_MF_AUTH_KEY_A, 0)) {
-        Serial.println("Yay! We are authenticated!");
+    	  printf("Authenticated!\n");
 
         // Attempt to read the first 4 blocks.
         uint8_t readbuf[16] = {0};
         uint8_t len;
         for (uint8_t b=0; b < 4 ; b++) {
           len = mfrc630_MF_read_block(b, readbuf);
-          Serial.print("Read block 0x");
+          printf("Read block 0x");
           print_block(&len,1);
-          Serial.print(": ");
+          printf(": ");
           print_block(readbuf, len);
-          Serial.println();
+          printf("\n");
         }
         mfrc630_MF_deauth();  // be sure to call this after an authentication!
       } else {
-        Serial.print("Could not authenticate :(\n");
+    	  printf("Could not authenticate :(\n");
       }
     } else {
-      Serial.print("Could not determine UID, perhaps some cards don't play");
-      Serial.print(" well with the other cards? Or too many collisions?\n");
+    	printf("Could not determine UID, perhaps some cards don't play");
+    	printf(" well with the other cards? Or too many collisions?\n");
     }
   } else {
-    Serial.print("No answer to REQA, no cards?\n");
+	  printf("No answer to REQA, no cards?\n");
   }
 }
