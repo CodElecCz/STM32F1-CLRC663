@@ -494,6 +494,11 @@
 #define MFRC630_MF_AUTH_KEY_B                   0x61  //!< A key_type for mifare auth.
 #define MFRC630_MF_CMD_READ                     0x30  //!< To read a block from mifare card.
 #define MFRC630_MF_CMD_WRITE                    0xA0  //!< To write a block to a mifare card.
+#define MFRC630_MF_CMD_TRANSFER  				0xB0
+#define MFRC630_MF_CMD_DECREMENT  				0xC0
+#define MFRC630_MF_CMD_INCREMENT  				0xC1
+#define MFRC630_MF_CMD_STORE  					0xC2
+#define MFRC630_MF_ULTRALIGHT_CMD_WRITE 		0xA2
 #define MFRC630_MF_ACK                          0x0A  //!< Sent by cards to acknowledge an operation.
 
 //! @}

@@ -106,6 +106,7 @@ int main(void)
   HAL_Delay_ms(1);
 
   mfrc630_AN1102_recommended_registers(MFRC630_PROTO_ISO14443A_106_MILLER_MANCHESTER);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -114,7 +115,7 @@ int main(void)
   {
     /* USER CODE END WHILE */
 	  mfrc_dump();
-	  HAL_Delay_ms(500);
+	  HAL_Delay_ms(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
