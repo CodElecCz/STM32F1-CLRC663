@@ -440,9 +440,10 @@
 
     //! @}
 
-// recommended register values from register 0x28 down.
+// recommended register values from register 0x28..0x39.
 // From AN11022: CLRC663 Quickstart Guide
 // All the other protocols are also in there....
+// 0x34-0x39: RxSofD/RxCtrl/RxWait/RxThreshold/Rcv/RxAna
 //! Correct settings for the CRC registers for ISO14443A data frames.
 #define MFRC630_RECOM_14443A_CRC 0x18
 //! Recommended register values for ISO1443A at 106 kbit/s with Miller / Manchester modulation.
@@ -451,7 +452,7 @@
                                       0x04, 0x90, 0x32, 0x12, 0x0A}
 #else
 #define MFRC630_RECOM_14443A_ID1_106 {0x8E, 0x12, 0x39, 0x0A, 0x18, 0x18, 0x0F, 0x21, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
-                                      0x04, 0x90, 0x5C, 0x12, 0x0A}
+                                      0x04, 0x90, 0x5C, 0x12, 0x0A} //0x04, 0x90, 0x5C, 0x12, 0x0A}
 #endif
 //! Recommended register values for ISO1443A at 212 kbit/s with Miller / BPSK modulation.
 #define MFRC630_RECOM_14443A_ID1_212 {0x8E, 0x12, 0x11, 0x06, 0x18, 0x18, 0x0F, 0x10, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
