@@ -112,52 +112,37 @@
 */
 // Define  command name                 hex     //  argument ; comment
 #define MFRC630_CMD_IDLE                0x00    /*!< (no arguments) ; no action, cancels current command execution. */
-
 #define MFRC630_CMD_LPCD                0x01    /*!< (no arguments) ; low-power card detection. */
-
 #define MFRC630_CMD_LOADKEY             0x02    /*!< (keybyte1), (keybyte2), (keybyte3), (keybyte4), (keybyte5),
                                                      (keybyte6); reads a MIFARE key (size of 6 bytes) from FIFO buffer
                                                      and puts it into Key buffer. */
-
 #define MFRC630_CMD_MFAUTHENT           0x03    /*!< 60h or 61h, (block address), (card serial number byte0), (card
                                                      serial number byte1), (card serial number byte2), (card serial
                                                      number byte3); performs the MIFARE standard authentication. */
-
 #define MFRC630_CMD_RECEIVE             0x05    /*!< (no arguments) ; activates the receive circuit. */
-
 #define MFRC630_CMD_TRANSMIT            0x06    /*!< bytes to send: byte1, byte2, ...;  transmits data from the FIFO
                                                      buffer. */
-
 #define MFRC630_CMD_TRANSCEIVE          0x07    /*!< bytes to send: byte1, byte2, ....;  transmits data from the FIFO
                                                      buffer and automatically activates the receiver after transmission
                                                      finished. */
-
 #define MFRC630_CMD_WRITEE2             0x08    /*!< addressH, addressL, data; gets one byte from FIFO buffer and
                                                      writes it to the internal EEPROM.*/
-
 #define MFRC630_CMD_WRITEE2PAGE         0x09    /*!< (page Address), data0, [data1..data63]; gets up to 64 bytes (one
                                                      EEPROM page) from the FIFO buffer and writes it to the EEPROM. */
-
 #define MFRC630_CMD_READE2              0x0A    /*!< addressH, address L, length; reads data from the EEPROM and copies
                                                      it into the FIFO buffer. */
-
 #define MFRC630_CMD_LOADREG             0x0C    /*!< (EEPROM addressH), (EEPROM addressL), RegAdr, (number of Register
                                                      to be copied); reads data from the internal EEPROM and initializes
                                                      the MFRC630 registers. EEPROM address needs to be within EEPROM
                                                      sector 2. */
-
 #define MFRC630_CMD_LOADPROTOCOL        0x0D    /*!< (Protocol number RX), (Protocol number TX); reads data from the
                                                      internal EEPROM and initializes the MFRC630 registers needed for a
                                                      Protocol change.*/
-
 #define MFRC630_CMD_LOADKEYE2           0x0E    /*!< KeyNr; copies a key from the EEPROM into the key buffer. */
-
 #define MFRC630_CMD_STOREKEYE2          0x0F    /*!< KeyNr, byte1, byte2, byte3, byte4, byte5, byte6; stores a MIFARE
                                                      key (size of 6 bytes) into the EEPROM.*/
-
 #define MFRC630_CMD_READRNR             0x1C    /*!< (no arguments) ; Copies bytes from the Random Number generator
                                                     into the FIFO until the FiFo is full. */
-
 #define MFRC630_CMD_SOFTRESET           0x1F    /*!< (no arguments) ; resets the MFRC630. */
 
 //! @}
@@ -461,8 +446,13 @@
 //! Correct settings for the CRC registers for ISO14443A data frames.
 #define MFRC630_RECOM_14443A_CRC 0x18
 //! Recommended register values for ISO1443A at 106 kbit/s with Miller / Manchester modulation.
+#if 0
 #define MFRC630_RECOM_14443A_ID1_106 {0x8A, 0x08, 0x21, 0x1A, 0x18, 0x18, 0x0F, 0x27, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
                                       0x04, 0x90, 0x32, 0x12, 0x0A}
+#else
+#define MFRC630_RECOM_14443A_ID1_106 {0x8E, 0x12, 0x39, 0x0A, 0x18, 0x18, 0x0F, 0x21, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
+                                      0x04, 0x90, 0x5C, 0x12, 0x0A}
+#endif
 //! Recommended register values for ISO1443A at 212 kbit/s with Miller / BPSK modulation.
 #define MFRC630_RECOM_14443A_ID1_212 {0x8E, 0x12, 0x11, 0x06, 0x18, 0x18, 0x0F, 0x10, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
                                       0x05, 0x90, 0x3F, 0x12, 0x02}

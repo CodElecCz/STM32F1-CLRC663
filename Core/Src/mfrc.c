@@ -76,10 +76,11 @@
  */
 
 // Hex print for blocks without printf.
-static void print_block(uint8_t * block,uint8_t length){
+static void print_block(uint8_t * block, uint8_t length){
     for (uint8_t i=0; i<length; i++){
         printf("%02X ", block[i]);
     }
+    printf("\n");
 }
 
 // The example dump function adapted such that it prints with Serial.print.
@@ -95,41 +96,17 @@ void mfrc_dump() {
     if (uid_len != 0) {  // did we get an UID?
       printf("UID of %d bytes (SAK: 0x%02X, ATQA: 0x%04X): ", uid_len, sak, atqa);
       print_block(uid, uid_len);
-      printf("\n");
 
-      if(sak==0x20) //bit 5 = support of ISO14443-4
+      if(sak & 0x20) //bit 5 = support of ISO14443-4
       {
-    	  // Use the manufacturer default key...
-		  //uint8_t NDEFkey[6] =  {0xD3, 0xF7, 0xD3, 0xF7, 0xD3, 0xF7};
+		  mfrc630_rats();
 
-		  //mfrc630_cmd_load_key(NDEFkey);  // load into the key buffer
-		  // Try to athenticate block 0.
-		  //if (mfrc630_MF_auth(uid, MFRC630_MF_AUTH_KEY_A, 0))
-		  //{
-    	  	  uint8_t status = mfrc630_rats();
+		  uint8_t ppse[] = {0x32, 0x50, 0x41, 0x59, 0x2e, 0x53, 0x59, 0x53, 0x2e, 0x44, 0x44, 0x46, 0x30, 0x31};
+		  mfrc630_APDU_select_ppse(ppse, sizeof(ppse));
 
-    	  	status = mfrc630_APDU_verify();
-
-    	  	//HAL_Delay_ms(155);
-
-    	  	  //                  0x32,0x50,0x41,0x59,0x2E,0x53,0x59,0x53,0x2E,0x44,0x44,0x46,0x30,0x31
-    	  	  uint8_t ppse[] = {0x32, 0x50, 0x41, 0x59, 0x2e, 0x53, 0x59, 0x53, 0x2e, 0x44, 0x44, 0x46, 0x30, 0x31};
-    	  	  status = mfrc630_APDU_select_ppse(ppse, sizeof(ppse));
-
-    	  	//HAL_Delay_ms(155);
-
-    	  	  //mastercard
-			  uint8_t app[] = {0xa0, 0x00, 0x00, 0x00, 0x04, 0x10, 0x10};
-			  status = mfrc630_APDU_select_app(app, sizeof(app));
-
-			  //HAL_Delay_ms(155);
-
-			  status = mfrc630_halt();
-
-		  //}
-    	  // Attempt to read the first 4 blocks.
-
-
+		  uint8_t app_visa[] = {0xa0, 0x00, 0x00, 0x00, 0x03, 0x10, 0x10};
+		  uint8_t app_mast[] = {0xa0, 0x00, 0x00, 0x00, 0x04, 0x10, 0x10};
+		  mfrc630_APDU_select_app(app_visa, sizeof(app_visa));
       }
       else
       {
@@ -149,11 +126,8 @@ void mfrc_dump() {
 			for (uint8_t b=0; b < 4 ; b++)
 			{
 			  len = mfrc630_MF_read_block(b, readbuf);
-			  printf("Read block 0x");
-			  print_block(&len,1);
-			  printf(": ");
+			  printf("Read block 0x02X:", len);
 			  print_block(readbuf, len);
-			  printf("\n");
 			}
 			mfrc630_MF_deauth();  // be sure to call this after an authentication!
 		  }

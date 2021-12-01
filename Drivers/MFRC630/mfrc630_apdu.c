@@ -23,8 +23,8 @@ uint8_t mfrc630_transmit(uint8_t cmd[], uint32_t cmdSize, uint8_t data[], uint32
 	  mfrc630_timer_set_control(timer_for_timeout, MFRC630_TCONTROL_CLK_211KHZ | MFRC630_TCONTROL_START_TX_END);
 	  // Frame waiting time: FWT = (256 x 16/fc) x 2 FWI
 	  // FWI defaults to four... so that would mean wait for a maximum of ~ 5ms
-	  mfrc630_timer_set_reload(timer_for_timeout, 2000);  // 2000 ticks of 5 usec is 10 ms.
-	  mfrc630_timer_set_value(timer_for_timeout, 2000);
+	  mfrc630_timer_set_reload(timer_for_timeout, 20000);  // 2000 ticks of 5 usec is 10 ms.
+	  mfrc630_timer_set_value(timer_for_timeout, 20000);
 
 	  uint8_t irq1_value = 0;
 	  uint8_t irq0_value = 0;
@@ -59,8 +59,6 @@ uint8_t mfrc630_transmit(uint8_t cmd[], uint32_t cmdSize, uint8_t data[], uint32
 	    return 0;
 	  }
 
-	  //HAL_Delay_ms(155);
-
 	  // all seems to be well...
 	  uint8_t buffer_length = mfrc630_fifo_length();
 	  //printf("mfrc630_fifo_length %d\n", buffer_length);
@@ -71,21 +69,29 @@ uint8_t mfrc630_transmit(uint8_t cmd[], uint32_t cmdSize, uint8_t data[], uint32
 	  return rx_len;
 }
 
+static void print_block(uint8_t * block, uint8_t length){
+    for (uint8_t i=0; i<length; i++){
+        printf("%02X ", block[i]);
+    }
+    printf("\n");
+}
+
 uint8_t mfrc630_rats()
 {
-	uint8_t  abtRats[] = { 0xe0, 0x80}; //8 means the PCD can processs a maxmum of 256 byte, tell the PICC do not exceed this number
+	uint8_t  abtRats[] = {0xe0, 0x80}; //8 means the PCD can processs a maxmum of 256 byte, tell the PICC do not exceed this number
 
 	uint8_t res[256];
 	uint32_t resSize = sizeof(res);
 	memset(res, 0, resSize);
 
-	uint8_t status = mfrc630_transmit(abtRats, sizeof(abtRats),res, &resSize); // 05 78 80 40 00
+	uint8_t status = mfrc630_transmit(abtRats, sizeof(abtRats), res, &resSize);
+	//MI: 		05 78 80 40 00
+	//SAMSUNG: 	05 78 80 70 00
+	//VISA:		08 78 80 70 00 00 00 00
 	if(status>0)
 	{
-		if(status==5)
-			printf("rats: %02X %02X %02X %02X %02X\n", res[0], res[1], res[2], res[3], res[4]);
-		else
-			printf("rats: %lu\n", resSize);
+		printf("RATS (%lub): ", resSize);
+		print_block(res, resSize);
 	}
 
 	return status;
@@ -93,10 +99,7 @@ uint8_t mfrc630_rats()
 
 uint8_t mfrc630_halt()
 {
-//#define EM_mifs_PICC_HALT           0x50	// halt
-//#define EM_mifs_PICC_DESELECT       0xCA	// DESELECT command code
-
-	uint8_t  abtHalt[] = { 0x50, 0x00};
+	uint8_t  abtHalt[] = {0x50, 0x00};
 
 	uint8_t res[256];
 	uint32_t resSize = sizeof(res);
@@ -105,43 +108,55 @@ uint8_t mfrc630_halt()
 	uint8_t status = mfrc630_transmit(abtHalt, sizeof(abtHalt),res, &resSize); //
 	if(status>0)
 	{
-		printf("halt: %lu\n", resSize);
+		printf("HALT (%lub): ", resSize);
+		print_block(res, resSize);
 	}
 
 	return status;
 }
 
 /*
- *
- *
-	DEP_REQ Frame
-	(xx xx D4 06 PFB 55 AA 55 AA 55 AA)
 
-	DEP_RES Frame
-	(xx xx D5 07 PFB 00 01 02 …….)
+APDU
+
+	+-----+-----+-----+-----+-----+-------------------------+-----+
+	| CLA | INS | P1  | P2  | Lc  | DATA                    | Le  |
+	+-----+-----+-----+-----+-----+-------------------------+-----+
+	| 00  | A4  | 04  | 00  | XX  | AID                     | 00  |
+	+-----+-----+-----+-----+-----+-------------------------+-----+
+
+VISA
+	RATS (8b): 08 78 80 70 00 00 00 00
+	APDU PPSE (63b): 02 6F 3A 84 0E 32 50 41 59 2E 53 59 53 2E 44 44 46 30 31 A5 28 BF 0C 25 61 23 4F 07 A0 00 00 00 03 10 10 50 0A 56 69 73 61 20 44 65 62 69 74 87 01 01 9F 0A 08 00 01 05 01 00 00 00 00 90 00
+	APDU APP (106b): 03 6F 65 84 07 A0 00 00 00 03 10 10 A5 5A 50 0A 56 69 73 61 20 44 65 62 69 74 87 01 01 5F 2D 02 65 6E 9F 11 01 01 9F 12 07 52 65 76 6F 6C 75 74 9F 38 18 9F 66 04 9F 02 06 9F 03 06 9F 1A 02 95 05 5F 2A 02 9A 03 9C 01 9F 37 04 BF 0C 1A 9F 5A 05 31 08 26 08 26 9F 0A 08 00 01 05 01 00 00 00 00 BF 63 04 DF 20 01 80 90 00
+
+HCE
+	RATS (5b): 05 78 80 40 00
+	APDU PPSE (2b): F2 08 			???
 
  */
-/*
 
-+-----+-----+-----+-----+-----+-------------------------+-----+
-| CLA | INS | P1  | P2  | Lc  | DATA                    | Le  |
-+-----+-----+-----+-----+-----+-------------------------+-----+
-| 00  | A4  | 04  | 00  | XX  | AID                     | 00  |
-+-----+-----+-----+-----+-----+-------------------------+-----+
+static uint8_t pcb = 0x02;
 
- */
+static uint8_t get_pcb()
+{
+	uint8_t _pcb = pcb;
 
-uint8_t pcb = 0x02;
+	if(pcb==0x02)
+		pcb = 0x03;
+	else
+		pcb = 0x02;
+
+	return _pcb;
+}
 
 uint8_t mfrc630_APDU_select_app(uint8_t app[], uint32_t size)
 {
 	if(size!=7)
 		return 0;
 
-	uint8_t cmd[14] = {0x02, 0x00, 0xA4, 0x04, 0x00, 0x07};
-	cmd[0] = pcb;
-	if(pcb==0x02) pcb = 0x03;
-	else pcb = 0x02;
+	uint8_t cmd[14] = {0x00, 0x00, 0xA4, 0x04, 0x00, 0x07};
+	cmd[0] = get_pcb();
 	memcpy(&cmd[6], app, 7);
 	cmd[13] = 0x00; //Le
 
@@ -151,12 +166,10 @@ uint8_t mfrc630_APDU_select_app(uint8_t app[], uint32_t size)
 
 	uint8_t status = mfrc630_transmit(cmd, sizeof(cmd), res, &resSize);
 	if(status>0)
-	{
-		if(status==2)
-			printf("app: %02X %02X\n", res[0], res[1]);
-		else
-			printf("app: %lu\n", resSize);
-	}
+		{
+			printf("APDU APP (%lub): ", resSize);
+			print_block(res, resSize);
+		}
 
 	return status;
 }
@@ -164,12 +177,10 @@ uint8_t mfrc630_APDU_select_app(uint8_t app[], uint32_t size)
 uint8_t mfrc630_APDU_select_ppse(uint8_t ppse[], uint32_t size)
 {
 	if(size!=14)
-			return 0;
+		return 0;
 
-	uint8_t cmd[21] = {0x02, 0x00, 0xA4, 0x04, 0x00, 0x0E};
-	cmd[0] = pcb;
-	if(pcb==0x02) pcb = 0x03;
-	else pcb = 0x02;
+	uint8_t cmd[21] = {0x00, 0x00, 0xA4, 0x04, 0x00, 0x0E};
+	cmd[0] = get_pcb();
 	memcpy(&cmd[6], ppse, 14);
 	cmd[20] = 0x00; //Le
 
@@ -181,10 +192,8 @@ uint8_t mfrc630_APDU_select_ppse(uint8_t ppse[], uint32_t size)
 	uint8_t status = mfrc630_transmit(cmd, sizeof(cmd), res, &resSize); //f2 08
 	if(status>0)
 	{
-		if(status==2)
-			printf("ppse: %02X %02X\n", res[0], res[1]);
-		else
-			printf("ppse: %lu\n", resSize);
+		printf("APDU PPSE (%lub): ", resSize);
+		print_block(res, resSize);
 	}
 
 	return status;
@@ -192,23 +201,19 @@ uint8_t mfrc630_APDU_select_ppse(uint8_t ppse[], uint32_t size)
 
 uint8_t mfrc630_APDU_verify()
 {
-	uint8_t cmd[] = {0x02, 0x00, 0x20, 0x00, 0x01, 0x00};
-	cmd[0] = pcb;
-	if(pcb==0x02) pcb = 0x03;
-	else pcb = 0x02;
+	uint8_t cmd[] = {0x00, 0x00, 0x20, 0x00, 0x01, 0x00};
+	cmd[0] = get_pcb();
 
 	uint8_t res[256];
 	uint32_t resSize = sizeof(res);
 	memset(res, 0, resSize);
 
 	//OK 90 00
-	uint8_t status = mfrc630_transmit(cmd, sizeof(cmd), res, &resSize); //f2 08
+	uint8_t status = mfrc630_transmit(cmd, sizeof(cmd), res, &resSize);
 	if(status>0)
 	{
-		if(status==2)
-			printf("verify: %02X %02X\n", res[0], res[1]);
-		else
-			printf("verify: %lu\n", resSize);
+		printf("APDU VERIFY (%lub): ", resSize);
+		print_block(res, resSize);
 	}
 
 	return status;
