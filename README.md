@@ -17,7 +17,7 @@ Implementation STM32F1 HAL with CubeMX and CubeIDE
 #### Middleware    
     USB_DEVICE (Virtual Port Com)
     
-##### Design
+## Design
 Based on iwanders/MFRC630 library
 * ISO14443A: Provides the necessities from ISO14443a to interact with RFID tags: the REQA, WUPA and SELECT procedure (with collision handling) to determine the UID(s).
 * ISO14443A-4: wrapper for APDU commands
