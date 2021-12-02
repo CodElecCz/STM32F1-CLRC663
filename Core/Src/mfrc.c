@@ -102,12 +102,11 @@ void mfrc_dump() {
       {
 		  mfrc630_rats();
 
-		  uint8_t ppse[] = {0x32, 0x50, 0x41, 0x59, 0x2e, 0x53, 0x59, 0x53, 0x2e, 0x44, 0x44, 0x46, 0x30, 0x31};
+		  uint8_t ppse[] = MFRC630_APDU_PPSE;
 		  mfrc630_APDU_select_ppse(ppse, sizeof(ppse));
 
-		  uint8_t app_visa[] = {0xa0, 0x00, 0x00, 0x00, 0x03, 0x10, 0x10};
-		  uint8_t app_mast[] = {0xa0, 0x00, 0x00, 0x00, 0x04, 0x10, 0x10};
-		  mfrc630_APDU_select_app(app_visa, sizeof(app_visa));
+		  uint8_t app[] = MFRC630_APDU_APP_VISA;
+		  mfrc630_APDU_select_app(app, sizeof(app));
       }
       else
       {
@@ -127,7 +126,7 @@ void mfrc_dump() {
 			for (uint8_t b=0; b < 4 ; b++)
 			{
 			  len = mfrc630_MF_read_block(b, readbuf);
-			  printf("Read block 0x02X:", len);
+			  printf("Read block 0x%02X: ", len);
 			  print_block(readbuf, len);
 			}
 			mfrc630_MF_deauth();  // be sure to call this after an authentication!
