@@ -328,6 +328,7 @@ void mfrc630_SPI_unselect()
 {
 	HAL_GPIO_WritePin(SDA_GPIO_Port, SDA_Pin, GPIO_PIN_SET);
 }
+
 void mfrc630_SPI_transfer(const uint8_t* tx, uint8_t* rx, uint16_t len)
 {
 	switch(HAL_SPI_TransmitReceive(&hspi1, tx, rx, len, 5000))

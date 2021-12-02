@@ -888,6 +888,70 @@ uint8_t mfrc630_MF_write_block(uint8_t block_address, const uint8_t* source) {
   return 0;
 }
 
+uint8_t mfrc630_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[], uint32_t* dataSize)
+{
+  mfrc630_flush_fifo();
+
+  mfrc630_write_reg(MFRC630_REG_TXCRCPRESET, MFRC630_RECOM_14443A_CRC | MFRC630_CRC_ON);
+  mfrc630_write_reg(MFRC630_REG_RXCRCCON, MFRC630_RECOM_14443A_CRC | MFRC630_CRC_ON);
+
+  // configure a timeout timer.
+  uint8_t timer_for_timeout = 0;  // should match the enabled interupt.
+
+  // enable the global IRQ for idle, errors and timer.
+  mfrc630_write_reg(MFRC630_REG_IRQ0EN, MFRC630_IRQ0EN_IDLE_IRQEN | MFRC630_IRQ0EN_ERR_IRQEN);
+  mfrc630_write_reg(MFRC630_REG_IRQ1EN, MFRC630_IRQ1EN_TIMER0_IRQEN);
+
+
+  // Set timer to 221 kHz clock, start at the end of Tx.
+  mfrc630_timer_set_control(timer_for_timeout, MFRC630_TCONTROL_CLK_211KHZ | MFRC630_TCONTROL_START_TX_END);
+  // Frame waiting time: FWT = (256 x 16/fc) x 2 FWI
+  // FWI defaults to four... so that would mean wait for a maximum of ~ 5ms
+  mfrc630_timer_set_reload(timer_for_timeout, 20000);  // 20000 ticks of 5 usec is 100 ms.
+  mfrc630_timer_set_value(timer_for_timeout, 20000);
+
+  uint8_t irq1_value = 0;
+  uint8_t irq0_value = 0;
+
+  mfrc630_clear_irq0();  // clear irq0
+  mfrc630_clear_irq1();  // clear irq1
+
+  // Go into send, then straight after in receive.
+  mfrc630_cmd_transceive(cmd, cmdSize);
+
+  // block until we are done
+  while (!(irq1_value & (1 << timer_for_timeout))) {
+	irq1_value = mfrc630_irq1();
+	if (irq1_value & MFRC630_IRQ1_GLOBAL_IRQ) {
+	  break;  // stop polling irq1 and quit the timeout loop.
+	}
+  }
+  mfrc630_cmd_idle();
+
+  if (irq1_value & (1 << timer_for_timeout)) {
+	// this indicates a timeout
+	  printf("timeout\n");
+	return 0;
+  }
+
+  irq0_value = mfrc630_irq0();
+  if (irq0_value & MFRC630_IRQ0_ERR_IRQ) {
+	// some error
+	uint8_t error = mfrc630_read_reg(MFRC630_REG_ERROR);
+	printf("error: %02x\n", error);
+	return 0;
+  }
+
+  // all seems to be well...
+  uint8_t buffer_length = mfrc630_fifo_length();
+  //printf("mfrc630_fifo_length %d\n", buffer_length);
+  uint8_t rx_len = (buffer_length <= *dataSize) ? buffer_length : *dataSize;
+  mfrc630_read_fifo(data, rx_len);
+  *dataSize = rx_len;
+
+  return rx_len;
+}
+
 void mfrc630_MF_deauth() {
   mfrc630_write_reg(MFRC630_REG_STATUS, 0);
 }

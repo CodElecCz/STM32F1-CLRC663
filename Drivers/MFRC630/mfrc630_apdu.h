@@ -8,9 +8,6 @@
 extern "C" {
 #endif
 
-uint8_t mfrc630_rats();
-uint8_t mfrc630_halt();
-
 uint8_t mfrc630_APDU_select_ppse(uint8_t ppse[], uint32_t size);
 uint8_t mfrc630_APDU_select_app(uint8_t app[], uint32_t size);
 uint8_t mfrc630_APDU_verify();

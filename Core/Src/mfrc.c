@@ -9,6 +9,7 @@
 #include "main.h"
 #include "mfrc630.h"
 #include "mfrc630_apdu.h"
+#include "mfrc630_14443p4.h"
 #include "usbd_cdc_if.h"
 #include "delay.h"
 

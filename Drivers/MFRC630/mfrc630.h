@@ -645,6 +645,7 @@ uint8_t mfrc630_MF_read_block(uint8_t block_address, uint8_t* dest);
 */
 uint8_t mfrc630_MF_write_block(uint8_t block_address, const uint8_t* source);
 
+uint8_t mfrc630_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[], uint32_t* dataSize);
 
 /*! \brief An example to read the first four blocks.
 
