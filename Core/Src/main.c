@@ -115,7 +115,7 @@ int main(void)
   {
     /* USER CODE END WHILE */
 	  mfrc_dump();
-	  HAL_Delay_ms(1000);
+	  HAL_Delay_ms(200);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

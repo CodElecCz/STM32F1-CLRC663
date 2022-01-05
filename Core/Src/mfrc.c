@@ -76,6 +76,25 @@
 
  */
 
+#define EOL 	"\r\n"
+#define response(data)	USB_Transmit((uint8_t*)data, strlen(data))
+
+void USB_Transmit(uint8_t *ptr, int len)
+{
+	uint32_t cnt = 0;
+	uint8_t ret = CDC_Transmit_FS(ptr, len);
+	while(ret == USBD_BUSY)
+	{
+		HAL_Delay_us(50);
+		ret = CDC_Transmit_FS(ptr, len);
+		if(++cnt>10)
+			break;
+	}
+#if REDIRECT_TO_UART
+	UART_Transmit(ptr, len);
+#endif
+}
+
 // Hex print for blocks without printf.
 static void print_block(uint8_t * block, uint8_t length){
     for (uint8_t i=0; i<length; i++){
@@ -83,6 +102,8 @@ static void print_block(uint8_t * block, uint8_t length){
     }
     printf("\n");
 }
+
+static uint32_t cnt = 0;
 
 // The example dump function adapted such that it prints with Serial.print.
 void mfrc_dump() {
@@ -95,6 +116,7 @@ void mfrc_dump() {
     uint8_t uid_len = mfrc630_iso14443a_select(uid, &sak);
 
     if (uid_len != 0) {  // did we get an UID?
+#if DEBUG
       printf("UID of %d bytes (SAK: 0x%02X, ATQA: 0x%04X): ", uid_len, sak, atqa);
       print_block(uid, uid_len);
 
@@ -136,6 +158,19 @@ void mfrc_dump() {
 			  printf("Could not authenticate :(\n");
 		  }
       }
+#else
+      char buffer[256];
+      char* pbuffer = buffer;
+      pbuffer += snprintf(buffer, sizeof(buffer), "[%08lu] UID of %d bytes (SAK: 0x%02X, ATQA: 0x%04X): ", HAL_GetTick(), uid_len, sak, atqa);
+      for (uint8_t i=0; i<uid_len; i++){
+    	  pbuffer += sprintf(pbuffer, "%02X ", uid[i]);
+          }
+      pbuffer += sprintf(pbuffer, EOL);
+      response(buffer);
+#endif
+
+      //dummy call
+      mfrc630_iso14443a_REQA();
     }
     else
     {
@@ -145,6 +180,12 @@ void mfrc_dump() {
   }
   else
   {
+#if DEBUG
 	  printf("No answer to REQA, no cards?\n");
+#else
+	  char buffer[256];
+	  snprintf(buffer, sizeof(buffer), "[%08lu] no read"EOL, HAL_GetTick());
+	  response(buffer);
+#endif
   }
 }

@@ -493,7 +493,8 @@
 #define MFRC630_MF_ACK                          0x0A  //!< Sent by cards to acknowledge an operation.
 
 //! @}
+#ifdef DEBUG
 #include <stdio.h>
 #define MFRC630_DEBUG_PRINTF	printf
-
+#endif
 #endif  // MFRC630_DEF_H_
