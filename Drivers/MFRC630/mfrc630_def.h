@@ -497,4 +497,5 @@
 #include <stdio.h>
 #define MFRC630_DEBUG_PRINTF	printf
 #endif
+
 #endif  // MFRC630_DEF_H_

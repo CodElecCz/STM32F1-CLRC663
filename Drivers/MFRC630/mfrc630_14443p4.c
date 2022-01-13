@@ -21,9 +21,9 @@ static const uint16_t bI14443p4_FsTable[13] = {16, 24, 32,
 
 static void print_block(uint8_t * block, uint8_t length){
     for (uint8_t i=0; i<length; i++){
-        printf("%02X ", block[i]);
+    	MFRC630_PRINTF("%02X ", block[i]);
     }
-    printf("\n");
+    MFRC630_PRINTF("\n");
 }
 
 uint8_t mfrc630_rats()
@@ -35,7 +35,7 @@ uint8_t mfrc630_rats()
 	uint32_t resSize = sizeof(res);
 	memset(res, 0, resSize);
 
-	printf("ATS (%lub) > ", reqSize);
+	MFRC630_PRINTF("ATS (%lub) > ", reqSize);
 	print_block(req, reqSize);
 
 	uint8_t status = mfrc630_transfer(req, reqSize, res, &resSize);
@@ -44,7 +44,7 @@ uint8_t mfrc630_rats()
 	//VISA:		08 78 80 70 00 00 00 00
 	if(status>0)
 	{
-		printf("ATS (%lub) < ", resSize);
+		MFRC630_PRINTF("ATS (%lub) < ", resSize);
 		print_block(res, resSize);
 	}
 
@@ -60,13 +60,13 @@ uint8_t mfrc630_halt()
 	uint32_t resSize = sizeof(res);
 	memset(res, 0, resSize);
 
-	printf("HALT (%lub) > ", reqSize);
+	MFRC630_PRINTF("HALT (%lub) > ", reqSize);
 	print_block(req, reqSize);
 
 	uint8_t status = mfrc630_transfer(req, reqSize, res, &resSize);
 	if(status>0)
 	{
-		printf("HALT (%lub) < ", resSize);
+		MFRC630_PRINTF("HALT (%lub) < ", resSize);
 		print_block(res, resSize);
 	}
 
@@ -167,7 +167,7 @@ uint8_t mfrc630_14443p4_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[]
 
 	uint8_t status = 0;
 
-	printf("14443P4 APDU (%lub) > ", reqSize);
+	MFRC630_PRINTF("14443P4 APDU (%lub) > ", reqSize);
 	print_block(req, reqSize);
 
 	uint32_t retries = 6;
@@ -178,7 +178,7 @@ uint8_t mfrc630_14443p4_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[]
 		status = mfrc630_transfer(req, reqSize, res, &resSize);
 		if(status>0)
 		{
-			printf("14443P4 (%lub) < ", resSize);
+			MFRC630_PRINTF("14443P4 (%lub) < ", resSize);
 			print_block(res, resSize);
 
 			/* NXP phpalI14443p4_Sw.c */
@@ -210,7 +210,7 @@ uint8_t mfrc630_14443p4_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[]
 				req[PHPAL_I14443P4_SW_PCB_POS+1] = bWtxm;
 				reqSize = 2;
 
-				printf("14443P4 S(WTX) (%lub) > ", reqSize);
+				MFRC630_PRINTF("14443P4 S(WTX) (%lub) > ", reqSize);
 				print_block(req, reqSize);
 
 				//TODO: wait?
@@ -222,7 +222,7 @@ uint8_t mfrc630_14443p4_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[]
 				req[PHPAL_I14443P4_SW_PCB_POS]  = PHPAL_I14443P4_SW_S_BLOCK | PHPAL_I14443P4_SW_S_BLOCK_RFU_BITS;
 				reqSize = 1;
 
-				printf("14443P4 S(DESELECT) (%lub) > ", reqSize);
+				MFRC630_PRINTF("14443P4 S(DESELECT) (%lub) > ", reqSize);
 				print_block(req, reqSize);
 			}
 			/* We received an invalid block */
