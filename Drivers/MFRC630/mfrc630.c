@@ -930,7 +930,7 @@ uint8_t mfrc630_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[], uint32
 
   if (irq1_value & (1 << timer_for_timeout)) {
 	// this indicates a timeout
-	  printf("timeout\n");
+	  MFRC630_PRINTF("timeout\n");
 	return 0;
   }
 
@@ -938,7 +938,7 @@ uint8_t mfrc630_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[], uint32
   if (irq0_value & MFRC630_IRQ0_ERR_IRQ) {
 	// some error
 	uint8_t error = mfrc630_read_reg(MFRC630_REG_ERROR);
-	printf("error: %02x\n", error);
+	MFRC630_PRINTF("error: %02x\n", error);
 	return 0;
   }
 
