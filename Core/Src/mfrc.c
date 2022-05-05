@@ -103,8 +103,6 @@ static void print_block(uint8_t * block, uint8_t length){
     printf("\n");
 }
 
-static uint32_t cnt = 0;
-
 // The example dump function adapted such that it prints with Serial.print.
 void mfrc_dump() {
   uint16_t atqa = mfrc630_iso14443a_REQA();
@@ -116,19 +114,23 @@ void mfrc_dump() {
     uint8_t uid_len = mfrc630_iso14443a_select(uid, &sak);
 
     if (uid_len != 0) {  // did we get an UID?
-#if DEBUG
+#if MAIN_DEBUG
       printf("UID of %d bytes (SAK: 0x%02X, ATQA: 0x%04X): ", uid_len, sak, atqa);
       print_block(uid, uid_len);
 
       if(sak & 0x20) //bit 5 = support of ISO14443-4
       {
 		  mfrc630_rats();
-
+#ifdef APDU_VISA
 		  uint8_t ppse[] = MFRC630_APDU_PPSE;
 		  mfrc630_APDU_select_ppse(ppse, sizeof(ppse));
 
 		  uint8_t app[] = MFRC630_APDU_APP_VISA;
 		  mfrc630_APDU_select_app(app, sizeof(app));
+#else
+		  uint8_t app[] = {0xF0, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+		  mfrc630_APDU_select_app(app, sizeof(app));
+#endif
       }
       else
       {
@@ -180,7 +182,7 @@ void mfrc_dump() {
   }
   else
   {
-#if DEBUG
+#if MAIN_DEBUG
 	  printf("No answer to REQA, no cards?\n");
 #else
 	  char buffer[256];
