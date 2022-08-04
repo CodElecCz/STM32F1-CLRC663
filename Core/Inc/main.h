@@ -76,9 +76,10 @@ void Error_Handler(void);
  * DEBUG
  */
 #ifdef DEBUG
-#define MAIN_DEBUG 		1
+#define MAIN_DEBUG 				1
 #else //RELEASE
-#define MAIN_DEBUG 		0
+#define MAIN_DEBUG 				0
+#define MAIN_RELEASE_TRACE		0
 #endif
 
 #if MAIN_DEBUG
@@ -99,6 +100,7 @@ void Error_Handler(void);
 #define MAIN_DEBUG_LEVEL_TRACE		1
 
 #define MAIN_DEBUG_RFID				MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_MFRC				MAIN_DEBUG_LEVEL_ERR
 
 #else
 

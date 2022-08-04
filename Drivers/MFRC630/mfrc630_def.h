@@ -25,6 +25,8 @@
 #ifndef MFRC630_DEF_H_
 #define MFRC630_DEF_H_
 
+#include "main.h"
+
 /*! \addtogroup register
     
   @{
@@ -441,28 +443,43 @@
     //! @}
 
 // recommended register values from register 0x28..0x39.
+/*
+	28h DrvMode Driver mode register
+	29h TxAmp Transmitter amplifier register
+	2Ah TxCon Driver configuration register
+	2Bh Txl Transmitter register
+	2Ch TxCrcPreset Transmitter CRC control register, preset value
+	2Dh RxCrcPreset Receiver CRC control register, preset value
+	2Eh TxDataNum Transmitter data number register
+	2Fh TxModWidth Transmitter modulation width register
+	30h TxSym10BurstLen Transmitter symbol 1 + symbol 0 burst length register
+	31h TXWaitCtrl Transmitter wait control
+	32h TxWaitLo Transmitter wait low
+	33h FrameCon Transmitter frame control
+	34h RxSofD Receiver start of frame detection
+	35h RxCtrl Receiver control register
+	36h RxWait Receiver wait register
+	37h RxThreshold Receiver threshold register
+	38h Rcv Receiver register
+	39h RxAna Receiver analog register
+ */
 // From AN11022: CLRC663 Quickstart Guide
 // All the other protocols are also in there....
 // 0x34-0x39: RxSofD/RxCtrl/RxWait/RxThreshold/Rcv/RxAna
 //! Correct settings for the CRC registers for ISO14443A data frames.
 #define MFRC630_RECOM_14443A_CRC 0x18
 //! Recommended register values for ISO1443A at 106 kbit/s with Miller / Manchester modulation.
-#if 0
-#define MFRC630_RECOM_14443A_ID1_106 {0x8A, 0x08, 0x21, 0x1A, 0x18, 0x18, 0x0F, 0x27, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
-                                      0x04, 0x90, 0x32, 0x12, 0x0A}
-#else
 #define MFRC630_RECOM_14443A_ID1_106 {0x8E, 0x12, 0x39, 0x0A, 0x18, 0x18, 0x0F, 0x21, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
-                                      0x04, 0x90, 0x5C, 0x12, 0x0A} //0x04, 0x90, 0x5C, 0x12, 0x0A}
-#endif
+                                      0x04, 0x90, 0x5C, 0x12, 0x0A}
 //! Recommended register values for ISO1443A at 212 kbit/s with Miller / BPSK modulation.
-#define MFRC630_RECOM_14443A_ID1_212 {0x8E, 0x12, 0x11, 0x06, 0x18, 0x18, 0x0F, 0x10, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
-                                      0x05, 0x90, 0x3F, 0x12, 0x02}
+#define MFRC630_RECOM_14443A_ID1_212 {0x8E, 0xD2, 0x11, 0x0A, 0x18, 0x18, 0x0F, 0x10, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
+                                      0x05, 0x90, 0x3C, 0x12, 0x0B}
 //! Recommended register values for ISO1443A at 424 kbit/s with Miller / BPSK modulation.
-#define MFRC630_RECOM_14443A_ID1_424 {0x8E, 0x12, 0x11, 0x06, 0x18, 0x18, 0x0F, 0x08, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
-                                      0x06, 0x90, 0x3F, 0x12, 0x0A}
+#define MFRC630_RECOM_14443A_ID1_424 {0x8E, 0xDE, 0x11, 0x0F, 0x18, 0x18, 0x0F, 0x07, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
+                                      0x06, 0x90, 0x2B, 0x12, 0x0B}
 //! Recommended register values for ISO1443A at 848  kbit/s with Miller / BPSK modulation.
-#define MFRC630_RECOM_14443A_ID1_848 {0x8F, 0xDB, 0x11, 0x06, 0x18, 0x18, 0x0F, 0x02, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
-                                      0x07, 0x90, 0x3F, 0x12, 0x02}
+#define MFRC630_RECOM_14443A_ID1_848 {0x8F, 0xDB, 0x21, 0x0F, 0x18, 0x18, 0x0F, 0x02, 0x00, 0xC0, 0x12, 0xCF, 0x00, \
+                                      0x07, 0x90, 0x3A, 0x12, 0x0B}
 //! @}
 
 /*! \addtogroup iso14443a
@@ -493,9 +510,11 @@
 #define MFRC630_MF_ACK                          0x0A  //!< Sent by cards to acknowledge an operation.
 
 //! @}
-#ifdef DEBUG
+#if MAIN_DEBUG || MAIN_RELEASE_TRACE
+#if (MAIN_DEBUG_MFRC == MAIN_DEBUG_LEVEL_TRACE)
 #include <stdio.h>
 #define MFRC630_DEBUG_PRINTF	printf
+#endif
 #endif
 
 #endif  // MFRC630_DEF_H_

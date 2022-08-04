@@ -16,9 +16,8 @@ extern "C" {
 #endif
 
 uint8_t mfrc630_rats();
-uint8_t mfrc630_halt();
-
 uint8_t mfrc630_14443p4_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[], uint32_t* dataSize);
+uint8_t mfrc630_14443p4_deselect();
 
 /** ISO 14443-4 Block Mask */
 #define PHPAL_I14443P4_SW_BLOCK_MASK            0xC0U

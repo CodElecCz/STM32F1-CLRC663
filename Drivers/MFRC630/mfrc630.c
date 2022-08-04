@@ -211,26 +211,29 @@ uint16_t mfrc630_timer_get_value(uint8_t timer) {
 // ---------------------------------------------------------------------------
 // From documentation
 // ---------------------------------------------------------------------------
-void mfrc630_AN11145_start_IQ_measurement() {
+void mfrc630_LPCD_start_measurement() {
   // Part-1, configurate LPCD Mode
   // Please remove any PICC from the HF of the reader.
   // "I" and the "Q" values read from reg 0x42 and 0x43
   // shall be used in part-2 "Detect PICC"
   //  reset CLRC663 and idle
-  mfrc630_write_reg(0, 0x1F);
+  mfrc630_write_reg(MFRC630_REG_COMMAND, 0x1F);
   // Should sleep here... for 50ms... can do without.
-  mfrc630_write_reg(0, 0);
+  mfrc630_write_reg(MFRC630_REG_COMMAND, 0x00);
+
   // disable IRQ0, IRQ1 interrupt sources
-  mfrc630_write_reg(0x06, 0x7F);
-  mfrc630_write_reg(0x07, 0x7F);
-  mfrc630_write_reg(0x08, 0x00);
-  mfrc630_write_reg(0x09, 0x00);
-  mfrc630_write_reg(0x02, 0xB0);  // Flush FIFO
+  mfrc630_write_reg(MFRC630_REG_IRQ0, 0x7F);
+  mfrc630_write_reg(MFRC630_REG_IRQ1, 0x7F);
+  mfrc630_write_reg(MFRC630_REG_IRQ0EN, 0x00);
+  mfrc630_write_reg(MFRC630_REG_IRQ1EN, 0x00);
+  mfrc630_write_reg(MFRC630_REG_FIFOCONTROL, 0xB0);  // Flush FIFO
+
   // LPCD_config
-  mfrc630_write_reg(0x3F, 0xC0);  // Set Qmin register
-  mfrc630_write_reg(0x40, 0xFF);  // Set Qmax register
-  mfrc630_write_reg(0x41, 0xC0);  // Set Imin register
-  mfrc630_write_reg(0x28, 0x89);  // set DrvMode register
+  mfrc630_write_reg(MFRC630_REG_LPCD_QMIN, 0xC0);  // Set Qmin register
+  mfrc630_write_reg(MFRC630_REG_LPCD_QMAX, 0xFF);  // Set Qmax register
+  mfrc630_write_reg(MFRC630_REG_LPCD_IMIN, 0xC0);  // Set Imin register
+  mfrc630_write_reg(MFRC630_REG_DRVMOD, 0x89);  // set DrvMode register
+
   // Execute trimming procedure
   mfrc630_write_reg(0x1F, 0x00);  // Write default. T3 reload value Hi
   mfrc630_write_reg(0x20, 0x10);  // Write default. T3 reload value Lo
@@ -239,18 +242,62 @@ void mfrc630_AN11145_start_IQ_measurement() {
   mfrc630_write_reg(0x23, 0xF8);  // Config T4 for AutoLPCD&AutoRestart.Set AutoTrimm bit.Start T4.
   mfrc630_write_reg(0x43, 0x40);  // Clear LPCD result
   mfrc630_write_reg(0x38, 0x52);  // Set Rx_ADCmode bit
-  mfrc630_write_reg(0x39, 0x03);  // Raise receiver gain to maximum
+  //mfrc630_write_reg(0x39, 0x03);  // Raise receiver gain to maximum
   mfrc630_write_reg(0x00, 0x01);  // Execute Rc663 command "Auto_T4" (Low power card detection and/or Auto trimming)
 }
 
-void mfrc630_AN11145_stop_IQ_measurement() {
+void mfrc630_LPCD_stop_measurement(uint8_t* i_val, uint8_t* q_val) {
   // Flush cmd and Fifo
   mfrc630_write_reg(0x00, 0x00);
   mfrc630_write_reg(0x02, 0xB0);
   mfrc630_write_reg(0x38, 0x12);  // Clear Rx_ADCmode bit
   //> ------------ I and Q Value for LPCD ----------------
-  // mfrc630_read_reg(MFRC630_REG_LPCD_I_RESULT) & 0x3F
-  // mfrc630_read_reg(MFRC630_REG_LPCD_Q_RESULT) & 0x3F
+  uint8_t i = mfrc630_read_reg(MFRC630_REG_LPCD_I_RESULT) & 0x3F;
+  uint8_t q = mfrc630_read_reg(MFRC630_REG_LPCD_Q_RESULT) & 0x3F;
+
+  //LPCD i:23 q:25
+  MFRC630_PRINTF("LPCD i:%02x q:%02x\n", i, q);
+
+  *i_val = i;
+  *q_val = q;
+}
+
+void mfrc630_LPCD(uint8_t i_val, uint8_t q_val) {
+	// LPCD_config
+	mfrc630_write_reg(MFRC630_REG_LPCD_QMIN, 0xC0);  // Set Qmin register
+	mfrc630_write_reg(MFRC630_REG_LPCD_QMAX, 0xFF);  // Set Qmax register
+	mfrc630_write_reg(MFRC630_REG_LPCD_IMIN, i_val);  // Set Imin register
+
+	//Prepare LPCD command, power down time 10[ms]. Cmd time 150[μsec].
+	mfrc630_write_reg(0x1F, 0x07);  // Write default. T3 reload value Hi
+	mfrc630_write_reg(0x20, 0xF2);  // Write default. T3 reload value Lo
+	mfrc630_write_reg(0x24, 0x00);  // Write min. T4 reload value Hi
+	mfrc630_write_reg(0x25, 0x13);  // Write min. T4 reload value Lo
+	mfrc630_write_reg(0x23, 0xDF);  // Config T4 for AutoLPCD&AutoRestart.Set AutoTrimm bit.Start T4.
+	mfrc630_write_reg(0x43, 0x40);  // Clear LPCD result
+	mfrc630_write_reg(0x38, 0x52);  // Set Rx_ADCmode bit
+	//mfrc630_write_reg(0x39, 0x03);  // Raise receiver gain to maximum
+
+	// Flush cmd and FIFO. Clear all IRQ flags
+	mfrc630_write_reg(MFRC630_REG_COMMAND, 0x00);
+	mfrc630_write_reg(MFRC630_REG_FIFOCONTROL, 0xB0);
+	mfrc630_write_reg(MFRC630_REG_IRQ0, 0x7F);
+	mfrc630_write_reg(MFRC630_REG_IRQ1, 0x7F);
+
+	// Enable IRQ sources: Idle and PLCD
+	 mfrc630_write_reg(MFRC630_REG_IRQ0EN, 0x10);
+	 mfrc630_write_reg(MFRC630_REG_IRQ1EN, 0xE0); //0x60
+	 mfrc630_write_reg(MFRC630_REG_COMMAND, 0x81); //Start RC663 cmd "Low power card detection". Enter PowerDown mode.
+}
+
+void mfrc630_LPCD_wakup() {
+	// Flush any running command and FIFO
+	mfrc630_write_reg(MFRC630_REG_COMMAND, 0x00);
+	mfrc630_write_reg(MFRC630_REG_IRQ0EN, 0x00);
+	mfrc630_write_reg(MFRC630_REG_IRQ1EN, 0x00);
+	mfrc630_write_reg(MFRC630_REG_FIFOCONTROL, 0xB0);
+	mfrc630_write_reg(0x38, 0x12); // Clear Rx_ADCmode bit
+	mfrc630_write_reg(0x23, 0x5F); // Stop Timer4
 }
 
 void mfrc630_AN1102_recommended_registers_skip(uint8_t protocol, uint8_t skip) {

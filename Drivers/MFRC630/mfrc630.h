@@ -455,7 +455,7 @@ uint16_t mfrc630_timer_get_value(uint8_t timer);
 
     From Application Note 11145, section 3.2.1, it configures the registers to perform an IQ measurement.
 */
-void mfrc630_AN11145_start_IQ_measurement();
+void mfrc630_LPCD_start_measurement();
 //      wait about 50ms between them.
 /*! \brief Stop IQ Measurement.
 
@@ -467,8 +467,10 @@ void mfrc630_AN11145_start_IQ_measurement();
       uint8_t Q_value = mfrc630_read_reg(MFRC630_REG_LPCD_Q_RESULT) & 0x3F
     \endcode
 */
-void mfrc630_AN11145_stop_IQ_measurement();
+void mfrc630_LPCD_stop_measurement(uint8_t* i_val, uint8_t* q_val);
 
+void mfrc630_LPCD(uint8_t i_val, uint8_t q_val);
+void mfrc630_LPCD_wakup();
 
 // From Application Note 11022:
 //      CLRC663 Quickstart Guide

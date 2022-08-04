@@ -51,28 +51,6 @@ uint8_t mfrc630_rats()
 	return status;
 }
 
-uint8_t mfrc630_halt()
-{
-	uint8_t  req[] = {0x50, 0x00};
-	uint32_t reqSize = sizeof(req);
-
-	uint8_t res[256];
-	uint32_t resSize = sizeof(res);
-	memset(res, 0, resSize);
-
-	MFRC630_PRINTF("HALT (%lub) > ", reqSize);
-	print_block(req, reqSize);
-
-	uint8_t status = mfrc630_transfer(req, reqSize, res, &resSize);
-	if(status>0)
-	{
-		MFRC630_PRINTF("HALT (%lub) < ", resSize);
-		print_block(res, resSize);
-	}
-
-	return status;
-}
-
 //I-Block
 static uint8_t get_pcb()
 {
@@ -161,9 +139,12 @@ uint8_t mfrc630_14443p4_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[]
 	memcpy(&req[1], cmd, cmdSize);
 	uint32_t reqSize = sizeof(req);
 
-	uint8_t res[256];
+	uint8_t res[128];
 	uint32_t resSize = sizeof(res);
 	memset(res, 0, resSize);
+
+	uint32_t dataSizeAlloc = *dataSize;
+	*dataSize = 0;
 
 	uint8_t status = 0;
 
@@ -186,6 +167,9 @@ uint8_t mfrc630_14443p4_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[]
 			if (0u != (PHPAL_I14443P4_SW_IS_I_BLOCK(res[PHPAL_I14443P4_SW_PCB_POS])))
 			{
 				//OK
+				size_t size = (resSize < dataSizeAlloc)? resSize : dataSizeAlloc;
+				memcpy(data, res, size);
+				*dataSize = size;
 				break;
 			}
 			/* R(ACK) handling */
@@ -235,7 +219,36 @@ uint8_t mfrc630_14443p4_transfer(uint8_t cmd[], uint32_t cmdSize, uint8_t data[]
 			break;
 
 		--retries;
-	}while(retries!=0);
+	}while(retries != 0);
+
+	return status;
+}
+
+uint8_t mfrc630_14443p4_deselect()
+{
+	uint8_t status = 0;
+
+	uint8_t req[1];
+	uint32_t reqSize;
+
+	/* S-Block PCB */
+	req[PHPAL_I14443P4_SW_PCB_POS]  = PHPAL_I14443P4_SW_S_BLOCK | PHPAL_I14443P4_SW_S_BLOCK_RFU_BITS;
+	req[PHPAL_I14443P4_SW_PCB_POS] |= PHPAL_I14443P4_SW_PCB_DESELECT;
+	reqSize = 1;
+
+	MFRC630_PRINTF("14443P4 S(DESELECT) (%lub) > ", reqSize);
+	print_block(req, reqSize);
+
+	uint8_t res[8];
+	uint32_t resSize = sizeof(res);
+	memset(res, 0, resSize);
+
+	status = mfrc630_transfer(req, reqSize, res, &resSize);
+	if(status>0)
+	{
+		MFRC630_PRINTF("14443P4 (%lub) < ", resSize);
+		print_block(res, resSize);
+	}
 
 	return status;
 }

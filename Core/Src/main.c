@@ -114,7 +114,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  mfrc_dump();
+	  MFRCReader_Dump();
+
 	  HAL_Delay_ms(200);
     /* USER CODE BEGIN 3 */
   }
@@ -331,7 +332,7 @@ void mfrc630_SPI_unselect()
 
 void mfrc630_SPI_transfer(const uint8_t* tx, uint8_t* rx, uint16_t len)
 {
-	switch(HAL_SPI_TransmitReceive(&hspi1, tx, rx, len, 5000))
+	switch(HAL_SPI_TransmitReceive(&hspi1, tx, rx, len, 100))
 	{
 	case HAL_OK:
 		// Communication is completed, dont do anything.

@@ -31,51 +31,33 @@ HCE
 
  */
 
-uint8_t mfrc630_APDU_select_app(uint8_t app[], uint32_t size)
+uint8_t mfrc630_APDU_select_app(uint8_t app[], uint32_t appSize, uint8_t data[], uint32_t *dataSize)
 {
-	if(size!=7)
+	if(appSize != 7)
 		return 0;
 
 	uint8_t cmd[13] = {0x00, 0xA4, 0x04, 0x00, 0x07};
-	memcpy(&cmd[5], app, 7);
+	memcpy(&cmd[5], app, appSize);
 	cmd[12] = 0x00; //Le
 
-	uint8_t res[256];
-	uint32_t resSize = sizeof(res);
-	memset(res, 0, resSize);
-
-	uint8_t status = mfrc630_14443p4_transfer(cmd, sizeof(cmd), res, &resSize);
-
-	return status;
+	return mfrc630_14443p4_transfer(cmd, sizeof(cmd), data, dataSize);
 }
 
-uint8_t mfrc630_APDU_select_ppse(uint8_t ppse[], uint32_t size)
+uint8_t mfrc630_APDU_select_ppse(uint8_t ppse[], uint32_t ppseSize, uint8_t data[], uint32_t *dataSize)
 {
-	if(size!=14)
+	if(ppseSize != 14)
 		return 0;
 
 	uint8_t cmd[20] = {0x00, 0xA4, 0x04, 0x00, 0x0E};
-	memcpy(&cmd[5], ppse, 14);
+	memcpy(&cmd[5], ppse, ppseSize);
 	cmd[19] = 0x00; //Le
 
-	uint8_t res[256];
-	uint32_t resSize = sizeof(res);
-	memset(res, 0, resSize);
-
-	uint8_t status = mfrc630_14443p4_transfer(cmd, sizeof(cmd), res, &resSize); //f2 08
-
-	return status;
+	return mfrc630_14443p4_transfer(cmd, sizeof(cmd), data, dataSize); //f2 08
 }
 
-uint8_t mfrc630_APDU_verify()
+uint8_t mfrc630_APDU_verify(uint8_t data[], uint32_t *dataSize)
 {
 	uint8_t cmd[] = {0x00, 0x20, 0x00, 0x01, 0x00};
 
-	uint8_t res[256];
-	uint32_t resSize = sizeof(res);
-	memset(res, 0, resSize);
-
-	uint8_t status = mfrc630_14443p4_transfer(cmd, sizeof(cmd), res, &resSize);
-
-	return status;
+	return mfrc630_14443p4_transfer(cmd, sizeof(cmd), data, dataSize);
 }
