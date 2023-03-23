@@ -241,20 +241,20 @@ static void print_block(uint8_t * block, uint8_t length){
 // The example dump function adapted such that it prints with Serial.print.
 void MFRCReader_Dump()
 {
-	uint32_t tick = HAL_GetTick();
-
+	//printf("[%06lu] MFRC REQA ...\n", HAL_GetTick());
 	uint16_t atqa = mfrc630_iso14443a_REQA();
 	if (atqa != 0)
 	{  // Are there any cards that answered?
 		uint8_t sak;
 		uint8_t uid[10] = {0};  // uids are maximum of 10 bytes long.
 
+		printf("[%06lu] MFRC select ...\n", HAL_GetTick());
 		// Select the card and discover its uid.
 		uint8_t uid_len = mfrc630_iso14443a_select(uid, &sak);
 
 		if (uid_len != 0)
 		{  // did we get an UID?
-			printf("[%06lu] MFRC uid %d bytes (SAK: 0x%02X, ATQA: 0x%04X): ", tick, uid_len, sak, atqa);
+			printf("[%06lu] MFRC uid %d bytes (SAK: 0x%02X, ATQA: 0x%04X): ", HAL_GetTick(), uid_len, sak, atqa);
 			print_block(uid, uid_len);
 
 			if(sak & 0x20) //bit 5 = support of ISO14443-4
@@ -296,7 +296,7 @@ void MFRCReader_Dump()
 
 					if(dataSize > 0)
 					{
-						printf("[%06lu] MFRC read 0x%02X:", tick, dataSize);
+						printf("[%06lu] MFRC read 0x%02lX:", HAL_GetTick(), dataSize);
 						print_block(data, dataSize);
 						break;
 					}
@@ -305,7 +305,7 @@ void MFRCReader_Dump()
 				}while(repeat != 0);
 
 				if(repeat == 0)
-					printf("[%06lu] MFRC no read\n", tick);
+					printf("[%06lu] MFRC no read\n", HAL_GetTick());
 
 #endif
 				mfrc630_14443p4_deselect();
@@ -327,23 +327,27 @@ void MFRCReader_Dump()
 
 					if(len)
 					{
-						printf("[%06lu] MFRC read 0x%02X:", tick, len);
+						printf("[%06lu] MFRC read 0x%02X:", HAL_GetTick(), len);
 						print_block(readbuf, len);
 					}
 					else
-						printf("[%06lu] MFRC no read\n", tick);
+						printf("[%06lu] MFRC no read\n", HAL_GetTick());
 
 					mfrc630_MF_deauth();  // be sure to call this after an authentication!
 				}
 				else
 				{
-					printf("[%06lu] MFRC not authenticate\n", tick);
+					printf("[%06lu] MFRC not authenticate\n", HAL_GetTick());
 				}
+
+				mfrc630_iso14443a_WUPA();
 			}
 		}
 		else
 		{
-			printf("[%06lu] MFRC no uid\n", tick);
+			printf("[%06lu] MFRC no uid\n", HAL_GetTick());
 		}
 	}
+
+	//printf("[%06lu] MFRC end\n", HAL_GetTick());
 }
